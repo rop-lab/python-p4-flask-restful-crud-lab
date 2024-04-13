@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from flask import Flask, jsonify, request, make_response
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
@@ -16,6 +14,9 @@ db.init_app(app)
 
 api = Api(app)
 
+@app.route('/')
+def index():
+    return 'Hello, Welcome to my plantsy API!'
 
 class Plants(Resource):
 
@@ -42,10 +43,28 @@ api.add_resource(Plants, '/plants')
 
 
 class PlantByID(Resource):
+    def patch(self, plant_id):
+        plant = Plant.query.get(plant_id)
+        if not plant:
+            return make_response(jsonify({'error': 'Plant not found'}), 404)
 
-    def get(self, id):
-        plant = Plant.query.filter_by(id=id).first().to_dict()
-        return make_response(jsonify(plant), 200)
+        data = request.json
+        plant.is_in_stock = data.get('is_in_stock', plant.is_in_stock)
+        db.session.commit()
+        return jsonify(plant.serialize())
+
+api.add_resource(PlantByID, '/plants/<int:plant_id>')
+
+
+def delete(self, id):
+        plant = Plant.query.get(id)
+        if not plant:
+            return make_response('', 204)
+
+        db.session.delete(plant)
+        db.session.commit()
+
+        return make_response('', 204)
 
 
 api.add_resource(PlantByID, '/plants/<int:id>')
